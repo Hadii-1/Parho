@@ -1,0 +1,34 @@
+# .gitignore  —  files git should NEVER track or push.
+# This is your main safety net: because ".env" is listed here, your API keys and
+# MongoDB password will not be uploaded when you push to GitHub.
+#
+# IMPORTANT: keep each pattern on its OWN line. Git does NOT support a comment on
+# the same line as a pattern — a trailing "# ..." becomes PART of the pattern and
+# silently stops it matching.
+
+# --- SECRETS (most important lines in this file) ---
+.env
+.env.*
+# ...but DO keep the harmless example (placeholders only) so others see the shape:
+!.env.example
+
+# --- Python junk ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# --- App data that should NOT be shipped (regenerated at runtime) ---
+# the vector store, rebuilt automatically as users upload PDFs:
+chroma_db/
+# temporary uploaded PDFs:
+uploads/
+# model cache (only used by the optional local embeddings):
+.cache/
+
+# --- Editor / OS noise ---
+.DS_Store
+.idea/
+.vscode/
+*.log

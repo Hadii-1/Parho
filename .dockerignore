@@ -1,0 +1,28 @@
+# .dockerignore  —  files kept OUT of the Docker build context.
+# Even if a file sits in your folder, listing it here means it is never copied
+# into the image. This is a second lock on your secrets: .env can never end up
+# baked into the built image, even by accident.
+
+# --- SECRETS ---
+.env
+.env.*
+!.env.example
+
+# --- Python junk ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- Local-only data (the container makes its own fresh copies) ---
+chroma_db/
+uploads/
+.cache/
+
+# --- Git / editor / OS noise (not needed inside the image) ---
+.git/
+.gitignore
+.DS_Store
+.idea/
+.vscode/
+*.log

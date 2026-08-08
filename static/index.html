@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  static/index.html  —  Parho (پڑھو)  —  premium single-page frontend
+  ============================================================================
+  This ONE page contains THREE "views" that JavaScript shows/hides:
+
+     1) #view-landing  → the public home page (hero + product story + contact)
+     2) #view-auth     → the glassmorphism login / sign-up card
+     3) #view-app      → the ChatGPT-style chat screen (after you log in)
+
+  Nothing here talks to the server by itself. All the logic (which view to show,
+  logging in, uploading a PDF, chatting) lives in script.js at the very bottom.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parho — Learn Smarter with AI</title>
+  <meta name="description" content="Parho turns your PDFs into a study partner. Upload your notes, ask questions, and learn faster with AI." />
+
+  <!-- Fonts:
+         • Noto Nastaliq Urdu → the elegant flowing script for our logo "پڑھو"
+         • Space Grotesk       → the modern display font for English headings
+         • Inter               → the clean, readable font for body text        -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400..700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Our stylesheet (served by FastAPI from the /static folder). -->
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<!-- ==========================================================================
+     VIEW 1 — LANDING / HOME
+     A scrollable marketing page that explains Parho and invites you to sign in.
+========================================================================== -->
+<div id="view-landing" class="view">
+
+  <!-- ---------- Top navigation bar (fixed, glassy) ---------- -->
+  <nav class="nav" id="nav">
+    <a href="#top" class="nav-brand">
+      <span class="nav-logo" aria-label="Parho">پڑھو</span>
+      <span class="nav-brand-en">Parho</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#how" class="nav-link">How it works</a>
+      <a href="#contact" class="nav-link">Contact</a>
+      <button class="btn btn-ghost" data-goto="auth" data-mode="login">Log in</button>
+      <button class="btn btn-solid" data-goto="auth" data-mode="signup">Get started</button>
+    </div>
+  </nav>
+
+  <!-- ---------- HERO (fullscreen) ----------
+       The <canvas> is where Three.js paints the drifting particle field. It
+       sits BEHIND the text. The text is the glowing Urdu logo, a tagline, and
+       two call-to-action buttons. -->
+  <header class="hero" id="top">
+    <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-glow" aria-hidden="true"></div>
+
+    <div class="hero-content">
+      <p class="hero-kicker">RAG-powered study companion</p>
+
+      <!-- THE SIGNATURE ELEMENT: the big glowing Urdu logo. -->
+      <h1 class="hero-logo" aria-label="Parho">پڑھو</h1>
+
+      <p class="hero-tagline">Learn Smarter with AI</p>
+      <p class="hero-sub">
+        Upload your notes as a PDF and Parho reads them for you. Ask anything,
+        it answers from your document first, then fills gaps with general
+        knowledge, and always shows where the answer came from.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-solid btn-lg" data-goto="auth" data-mode="signup">
+          Start learning free
+        </button>
+        <a href="#how" class="btn btn-ghost btn-lg">See how it works</a>
+      </div>
+
+      <a href="#features" class="hero-scroll" aria-label="Scroll to features">
+        <span class="hero-scroll-dot"></span>
+      </a>
+    </div>
+  </header>
+  <!-- ---------- MOTION BAND 1 ----------
+       Thin strips of fast-moving rectangles: the "motion.dev" style transitions
+       between sections. Each band uses one of the color pairs you chose. The
+       rectangles are created by script.js; data-c1/data-c2 are the two colors. -->
+  <div class="band" data-c1="#13737A" data-c2="#FBCA89" aria-hidden="true"></div>
+
+  <!-- ---------- FEATURES ---------- -->
+  <section class="section" id="features">
+    <div class="section-head reveal">
+      <p class="eyebrow">Why Parho</p>
+      <h2 class="section-title">Your PDFs, turned into a tutor.</h2>
+      <p class="section-lead">
+        Everything runs around a Retrieval-Augmented Generation (RAG) pipeline, 
+        a fancy way of saying Parho finds the exact right lines in your notes
+        before it answers, so replies stay grounded in your material.
+      </p>
+    </div>
+
+    <div class="cards">
+      <article class="card reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+        </div>
+        <h3 class="card-title">Grounded in your notes</h3>
+        <p class="card-text">
+          Answers are built from the chunks Parho retrieves from your own PDF,
+          not guessed from thin air. Every reply lists its sources.
+        </p>
+      </article>
+
+      <article class="card reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3 class="card-title">Remembers the thread</h3>
+        <p class="card-text">
+          Ask "explain that more" and Parho knows what "that" was. It keeps the
+          conversation in mind so follow-up questions just work.
+        </p>
+      </article>
+
+      <article class="card reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </div>
+        <h3 class="card-title">Private per user</h3>
+        <p class="card-text">
+          Each account gets its own isolated vector store, so your documents are
+          only ever searched for you, and never mixed with anyone else's.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ---------- MOTION BAND 2 ---------- -->
+  <div class="band" data-c1="#E98389" data-c2="#819A94" aria-hidden="true"></div>
+
+  <!-- ---------- HOW IT WORKS ---------- -->
+  <section class="section" id="how">
+    <div class="section-head reveal">
+      <p class="eyebrow">How it works</p>
+      <h2 class="section-title">Three steps to smarter studying.</h2>
+    </div>
+
+    <ol class="steps">
+      <li class="step reveal">
+        <span class="step-num">01</span>
+        <h3 class="step-title">Upload a PDF</h3>
+        <p class="step-text">
+          Drop in your lecture notes, a chapter, or a research paper. Parho
+          reads it, splits it into passages, and turns each one into a
+          searchable embedding.
+        </p>
+      </li>
+      <li class="step reveal">
+        <span class="step-num">02</span>
+        <h3 class="step-title">Ask a question</h3>
+        <p class="step-text">
+          Type anything in plain language. Parho retrieves the most relevant
+          passages from your document and hands them to the AI as context.
+        </p>
+      </li>
+      <li class="step reveal">
+        <span class="step-num">03</span>
+        <h3 class="step-title">Learn with sources</h3>
+        <p class="step-text">
+          You get a clear answer plus the snippets it leaned on — so you can
+          trust it, verify it, and dig deeper.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ---------- MOTION BAND 3 ---------- -->
+  <div class="band" data-c1="#88393C" data-c2="#81D1D0" aria-hidden="true"></div>
+  <!-- ---------- CONTACT / REACH OUT ---------- -->
+  <section class="section section-contact" id="contact">
+    <div class="contact-card reveal">
+      <p class="eyebrow">Reach out</p>
+      <h2 class="section-title">Built by a student, learning in public.</h2>
+      <p class="section-lead">
+        Parho is my first AI project. A hands-on way to understand RAG,
+        embeddings, and building a real product end to end. If you'd like to
+        see more of my work or say hello, the door's open.
+      </p>
+
+      <!--
+        ┌──────────────────────────────────────────────────────────────────┐
+        │  EDIT ME:  paste your real portfolio URL between the quotes below. │
+        │  Example:  href="https://hadii-1.github.io/Portfolio_Hadi/"                            │
+        │  Until then it points to "#" and simply does nothing.              │
+        └──────────────────────────────────────────────────────────────────┘
+      -->
+      <div class="contact-actions">
+        <a class="btn btn-solid btn-lg" id="portfolio-link"
+           href="https://hadii-1.github.io/Portfolio_Hadi/"
+           target="_blank" rel="noopener noreferrer">
+          Visit my portfolio
+        </a>
+        <button class="btn btn-ghost btn-lg" data-goto="auth" data-mode="signup">
+          Try Parho now
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- FOOTER ---------- -->
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="Parho">پڑھو</span>
+      <p class="footer-text">Parho — Learn Smarter with AI · Made as a first step into AI.</p>
+    </div>
+
+    <!--
+      ┌────────────────────────────────────────────────────────────────────┐
+      │  EDIT ME:  paste your LinkedIn profile URL between the quotes below. │
+      │  Example:  href="https://www.linkedin.com/in/your-name"             │
+      │  Until then it points to "#" and simply does nothing.               │
+      └────────────────────────────────────────────────────────────────────┘
+    -->
+    <a class="footer-social" id="linkedin-link"
+       href="https://www.linkedin.com/in/hadi-sajjad"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Connect on LinkedIn" title="LinkedIn">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21h-4v-5.6c0-1.33-.02-3.05-1.86-3.05-1.86 0-2.14 1.45-2.14 2.95V21H9z"/></svg>
+    </a>
+  </footer>
+</div>
+
+
+<!-- ==========================================================================
+     VIEW 2 — AUTH  (login / sign-up)
+     One glass card, two forms; we toggle between them with the tabs on top.
+========================================================================== -->
+<div id="view-auth" class="view hidden">
+  <div class="auth-bg" aria-hidden="true"></div>
+
+  <button class="auth-back" data-goto="landing" aria-label="Back to home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>
+    Home
+  </button>
+
+  <div class="auth-card">
+    <div class="auth-head">
+      <span class="auth-logo" aria-label="Parho">پڑھو</span>
+      <h2 class="auth-title">Welcome</h2>
+      <p class="auth-sub">Sign in to start studying with your PDFs.</p>
+    </div>
+
+    <!-- Sliding tab switch between Login and Sign up. -->
+    <div class="auth-tabs" role="tablist">
+      <button id="tab-login" class="auth-tab active" role="tab" data-mode="login">Log in</button>
+      <button id="tab-signup" class="auth-tab" role="tab" data-mode="signup">Sign up</button>
+      <span class="auth-tab-glider" aria-hidden="true"></span>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="login-form" class="auth-form">
+      <label class="field">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </span>
+        <input type="email" id="login-email" placeholder="Email" autocomplete="email" required />
+      </label>
+      <label class="field">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn btn-solid btn-block">Log in</button>
+    </form>
+
+    <!-- SIGN-UP FORM (hidden until the Sign up tab is chosen) -->
+    <form id="signup-form" class="auth-form hidden">
+      <label class="field">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <input type="text" id="signup-name" placeholder="Your name" autocomplete="name" required />
+      </label>
+      <label class="field">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </span>
+        <input type="email" id="signup-email" placeholder="Email" autocomplete="email" required />
+      </label>
+      <label class="field">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <input type="password" id="signup-password" placeholder="Password (6+ characters)" autocomplete="new-password" minlength="6" required />
+      </label>
+      <button type="submit" class="btn btn-solid btn-block">Create account</button>
+    </form>
+
+    <p id="auth-message" class="auth-message" role="alert"></p>
+  </div>
+</div>
+
+
+<!-- ==========================================================================
+     VIEW 3 — APP  (the ChatGPT-style chat screen)
+     A slim top bar, a scrolling message area, and a fixed rounded input bar
+     pinned to the bottom with a PDF-upload icon on the LEFT and send on the
+     RIGHT.
+========================================================================== -->
+<div id="view-app" class="view hidden">
+
+  <!-- Top bar -->
+  <header class="app-bar">
+    <div class="app-bar-left">
+      <span class="app-logo" aria-label="Parho">پڑھو</span>
+      <span class="app-brand-en">Parho</span>
+    </div>
+    <div class="app-bar-right">
+      <span id="quota" class="quota-pill"></span>
+      <span id="welcome" class="welcome"></span>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
+    </div>
+  </header>
+
+  <!-- Scrolling conversation area -->
+  <main class="chat" id="chat-window">
+    <div class="chat-empty" id="chat-empty">
+      <span class="chat-empty-logo" aria-label="Parho">پڑھو</span>
+      <h2 class="chat-empty-title">What are we learning today?</h2>
+      <p class="chat-empty-text">
+        Upload a PDF with the <strong>+</strong> button, then ask anything about it.
+      </p>
+    </div>
+  </main>
+
+  <!-- The fixed rounded input bar. Also a drop target for drag-and-drop PDFs. -->
+  <div class="composer-wrap">
+    <div id="upload-toast" class="upload-toast hidden"></div>
+
+    <form class="composer" id="chat-form" novalidate>
+      <!-- Hidden native file input; the round "+" button clicks it for us. -->
+      <input type="file" id="pdf-input" accept="application/pdf" hidden />
+
+      <!-- PDF upload button (bottom-LEFT) with a tooltip on hover. -->
+      <button type="button" class="composer-upload" id="upload-btn" aria-label="Upload PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="tooltip">Upload PDF</span>
+      </button>
+
+      <!-- The growing text box for the question. -->
+      <textarea
+        id="question-input"
+        class="composer-input"
+        rows="1"
+        placeholder="Ask a question about your PDF…"
+        autocomplete="off"
+      ></textarea>
+
+      <!-- Send button (bottom-RIGHT). -->
+      <button type="submit" class="composer-send" id="send-btn" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 11l5-5 5 5"/><path d="M12 6v13"/></svg>
+      </button>
+    </form>
+
+    <p class="composer-hint">Parho answers from your PDF first, then general knowledge.</p>
+
+    <!-- Full-screen "drop your PDF" overlay, shown only while dragging a file. -->
+    <div id="drop-overlay" class="drop-overlay hidden">
+      <div class="drop-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg>
+        <p>Drop your PDF to upload</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==========================================================================
+     SCRIPTS
+     • Three.js from a CDN → powers the animated particle hero.
+     • script.js (our code) → everything else. Loaded LAST so all the HTML
+       elements above already exist by the time the code runs.
+========================================================================== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/static/script.js"></script>
+</body>
+</html>

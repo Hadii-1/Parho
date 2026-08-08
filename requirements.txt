@@ -1,0 +1,46 @@
+# requirements.txt  —  install with:  pip install -r requirements.txt
+# (Run this inside your project's virtual environment / venv.)
+#
+# Many of the LangChain/Google/Groq packages may ALREADY be installed in your
+# venv. Listing them here anyway makes the project reproducible on any machine.
+# pip will simply skip the ones you already have.
+
+# --- Web framework (the backend server) ---
+fastapi                 # the API framework
+uvicorn[standard]       # the server that actually runs FastAPI
+python-multipart        # required by FastAPI to receive uploaded files (PDFs)
+
+# --- Data validation ---
+pydantic                # request/response models (comes with FastAPI, listed for clarity)
+email-validator         # makes Pydantic's EmailStr work (validates email addresses)
+
+# --- Database (users + upload records) ---
+pymongo                 # MongoDB driver
+
+# --- Security (login) ---
+PyJWT                   # create/verify the JWT login tokens
+passlib[bcrypt]         # password hashing helper
+bcrypt==4.0.1           # the hashing algorithm (pinned to avoid a passlib warning)
+
+# --- RAG / AI stack ---
+langchain-core          # core building blocks (prompts, messages, output parsers)
+langchain-community     # PyPDFLoader lives here
+langchain-text-splitters # RecursiveCharacterTextSplitter
+langchain-groq          # ChatGroq (writes the answers)
+langchain-chroma        # LangChain wrapper around the Chroma vector store
+chromadb                # the Chroma vector database itself
+pypdf                   # reads text out of PDF files (used by PyPDFLoader)
+
+# Embeddings — the app DEFAULTS to Google cloud embeddings. This is just an API
+# call: nothing to download, tiny memory use, and it can't break the way a local
+# model install can. This one package is all the default needs:
+langchain-google-genai  # GoogleGenerativeAIEmbeddings (default provider)
+
+# OPTIONAL — only if you set EMBEDDING_PROVIDER=huggingface (a LOCAL model).
+# These pull in PyTorch (hundreds of MB), so they're left OUT of the default
+# install to keep things light. Uncomment BOTH lines to run embeddings locally:
+# langchain-huggingface   # HuggingFaceEmbeddings (local provider)
+# sentence-transformers   # runs the actual local embedding model
+
+# --- Config ---
+python-dotenv           # reads your .env file
