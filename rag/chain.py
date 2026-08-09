@@ -76,6 +76,17 @@ _answer_prompt = ChatPromptTemplate.from_messages([
     ("human", "{input}"),
 ])
 
+# -----------------------------------------------------------------------------
+# HOW MUCH CONVERSATION TO REMEMBER
+# -----------------------------------------------------------------------------
+# "Memory" here is simple: the frontend re-sends the recent chat on every
+# question, and we feed it to the model so follow-ups make sense. We cap it so
+# the prompt can't grow forever (which would cost more tokens, get slower, and
+# eventually overflow the model's context). 10 messages = the last ~5 exchanges
+# (5 of yours + 5 of the AI's), which is plenty for follow-up questions.
+MAX_HISTORY_MESSAGES = 10
+
+
 def _to_lc_messages(history):
     """Convert our simple history (list of {role, content}) into the message
     objects LangChain expects. 'user' -> HumanMessage, anything else -> AIMessage.
@@ -103,28 +114,49 @@ def answer_question(user_id: str, question: str, history=None):
     (answer: str, sources: list[str])
     """
     history = history or []
+
+    # Keep only the most recent messages (see MAX_HISTORY_MESSAGES above) so the
+    # "memory" we send can't grow without limit on a long conversation.
+    if len(history) > MAX_HISTORY_MESSAGES:
+        history = history[-MAX_HISTORY_MESSAGES:]
+
     lc_history = _to_lc_messages(history)     # past messages as LangChain objects
 
     llm = get_llm()                           # the ChatGroq model (rag/llm.py)
-    retriever = get_retriever(user_id)        # this user's private Chroma search
 
     # --- STEP 1: rewrite the follow-up into a standalone question ------------
     # Only needed when there's history. `_rewrite_prompt | llm | StrOutputParser()`
     # builds a mini-chain: fill the rewrite prompt, run the model, and return the
     # model's reply as a plain string (the standalone question we'll search with).
+    #
+    # This is an EXTRA model call that only happens on follow-up questions. If it
+    # fails for any reason (a hiccup from the model provider, a rate limit, etc.)
+    # we must NOT let the whole chat break — so we catch the error and simply
+    # search with the original question instead. (Before this guard, a failure
+    # here is exactly what made every follow-up show "Cannot reach the server".)
+    search_query = question                   # sensible default / fallback
     if lc_history:
-        rewrite_chain = _rewrite_prompt | llm | StrOutputParser()
-        search_query = rewrite_chain.invoke({
-            "input": question,
-            "chat_history": lc_history,
-        })
-    else:
-        search_query = question               # first question is already standalone
+        try:
+            rewrite_chain = _rewrite_prompt | llm | StrOutputParser()
+            search_query = rewrite_chain.invoke({
+                "input": question,
+                "chat_history": lc_history,
+            })
+        except Exception as exc:
+            print(f"[Parho] rewrite step failed; using the original question. reason: {exc}")
+            search_query = question
 
     # --- STEP 2: retrieve the most relevant PDF chunks ----------------------
     # retriever.invoke(text) returns a list of Document objects (the chunks whose
-    # embeddings are closest to the question's embedding).
-    docs = retriever.invoke(search_query)
+    # embeddings are closest to the question's embedding). If the user hasn't
+    # uploaded a PDF yet, or the vector store errors, we fall back to NO context
+    # so the assistant can still answer from general knowledge.
+    try:
+        retriever = get_retriever(user_id)    # this user's private Chroma search
+        docs = retriever.invoke(search_query)
+    except Exception as exc:
+        print(f"[Parho] retrieval failed; answering without PDF context. reason: {exc}")
+        docs = []
 
     # --- STEP 3: "stuff" the chunks into the answer prompt and generate ------
     # We paste all chunk texts together into one string; that string fills the
